@@ -5,5 +5,6 @@ import './styles.css'
 import './expanded.css'
 import './lifecycle.css'
 import './brokerflow.css'
+import './crm-theme.css'
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>)

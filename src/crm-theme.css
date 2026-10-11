@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap');
+
+/* Typography and spacing only. The existing Finxora palette is inherited. */
+:root,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: Geist, 'DM Sans', Arial, sans-serif;
+}
+
+.brand,
+.login-brand,
+.page-header h1,
+.panel-heading h2,
+.section-heading h2,
+.metric-value,
+.chart-stat strong,
+.login-story h1,
+.login-panel h2,
+.app-shell h1,
+.app-shell h2,
+.app-shell h3,
+.public-shell h1,
+.public-shell h2,
+.public-register-shell h1,
+.public-register-shell h2 {
+  font-family: Geist, Manrope, sans-serif;
+}
+
+.app-shell { min-height: 100vh; }
+.sidebar { width: 254px; flex-basis: 254px; }
+.brand { height: 64px; padding-inline: 17px; font-size: 21px; letter-spacing: -.9px; }
+.workspace-switch { margin: 11px 10px 17px; padding: 9px; }
+.nav-group { margin-bottom: 14px; }
+.nav-caption { padding-inline: 19px; margin-bottom: 5px; letter-spacing: 1.2px; }
+.nav-item {
+  width: calc(100% - 16px);
+  margin: 1px 8px;
+  padding: 9px 11px;
+  gap: 10px;
+  font-size: 12px;
+}
+.nav-item svg { width: 16px; height: 16px; }
+.sidebar-bottom { padding: 10px; }
+.sidebar-user { padding-top: 12px; }
+
+.topbar { height: 64px; padding-inline: 25px; }
+.topbar-right { gap: 13px; }
+.breadcrumb { font-size: 12px; }
+.content { max-width: 1600px; padding: 25px 28px 70px; }
+.page-header { margin-bottom: 23px; }
+.page-header h1 { font-size: 25px; letter-spacing: -.7px; line-height: 1.18; }
+.page-header p { line-height: 1.5; }
+.eyebrow { letter-spacing: 1.3px; }
+.panel-heading h2, .section-heading h2 { font-size: 15px; letter-spacing: -.35px; }
+
+.btn { min-height: 35px; padding: 8px 12px; font-size: 11px; }
+.badge { padding: 5px 8px; }
+.metrics-grid { gap: 12px; margin-bottom: 14px; }
+.metric-card { min-height: 121px; padding: 16px; }
+.metric-value { margin: 9px 0 6px; font-size: 24px; }
+.overview-grid { gap: 14px; margin-bottom: 14px; }
+.performance-panel, .quick-panel { padding: 18px; }
+.competition-cards, .feature-grid, .prize-grid { gap: 13px; }
+.table-wrap { margin-top: 13px; }
+.section-heading { align-items: center; }
+.modal-head { padding-top: 21px; }
+.modal form { padding-top: 18px; }
+
+.login-panel h2 { letter-spacing: -.65px; }
+.login-story h1 { letter-spacing: -2.1px; }
+.public-shell, .public-register-shell { font-family: Geist, 'DM Sans', Arial, sans-serif; }
+
+@media (max-width: 1200px) {
+  .sidebar { width: 226px; flex-basis: 226px; }
+  .content { padding: 25px; }
+  .topbar { padding-inline: 25px; }
+}
+
+@media (max-width: 720px) {
+  .sidebar { width: min(270px, 85vw); }
+  .topbar { height: 62px; padding-inline: 18px; }
+  .content { padding: 22px 18px 55px; }
+  .page-header h1 { font-size: 23px; }
+}
