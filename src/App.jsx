@@ -7,30 +7,49 @@ import {
   Sparkles, Target, TrendingUp, Trophy, Users, Wallet, X, Building2, UserCog, LifeBuoy
 } from 'lucide-react'
 import { featureGroups, initialCompetitions, initialParticipants, initialViolations, leaderboard } from './data'
+import { AdminAppeals, AdminConnectors, AdminFraudSignals, AdminHome, AdminPayouts, AdminRegistrations, AdminRuleBuilder, AdminScoring, BrandEmbed, BrokerBranding, BrokerCampaigns, BrokerHome, BrokerPartners, BrokerPrizePlan, BrokerROI, BrokerSocialKit, BrokerSubcontests, ContestConfiguration, CreateContestModal, TraderAccountConnection, TraderAppeals, TraderDiscovery, TraderEngagement, TraderMyCompetitions, TraderPrizeExperience } from './ExpandedPages.jsx'
+import { AdminContestLifecycle, PublicContestLanding, PublicRegistration, TraderContestLobby, TraderFairPlay, TraderIdentity, TraderJourney, TraderLivePerformance, TraderResults, TraderTrading, VERIFIED_TRADER_EMAIL, createVerifiedTraderFlow, flowSeed } from './Lifecycle.jsx'
+import { BrokerContestWorkflow, BrokerIBPortal, BrokerLiveOperations, BrokerOnboarding, BrokerRegistrations, BrokerResultsFinance, brokerRoleCan, brokerSetupSeed } from './BrokerFlow.jsx'
 
 const roleConfig = {
-  trader: { name: 'Alex Morgan', title: 'Trader', email: 'alex.morgan@example.com', initials: 'AM', color: 'purple', home: 'trader' },
+  trader: { name: 'Alex Morgan', title: 'Trader', email: 'alex.morgan@example.com', initials: 'AM', color: 'purple', home: 'trader-journey' },
   broker: { name: 'Jordan Davis', title: 'Broker admin', email: 'broker@finxora.demo', initials: 'JD', color: 'blue', home: 'overview' },
   admin: { name: 'Morgan Lee', title: 'Platform admin', email: 'admin@finxora.demo', initials: 'ML', color: 'mint', home: 'admin-overview' },
 }
 const navByRole = {
   trader: [
-    { label: 'MY WORKSPACE', items: [['trader','Dashboard',LayoutDashboard],['trader-discover','Discover competitions',Search],['trader-competitions','My competitions',Trophy],['leaderboard','Leaderboard',TrendingUp]] },
-    { label: 'MY ACCOUNT', items: [['trader-rules','Rules & eligibility',Shield],['trader-prizes','Results & prizes',Gift],['trader-notifications','Notifications',Bell],['trader-profile','Profile & account',UserCog]] },
+    { label: 'MY WORKSPACE', items: [['trader-journey','My journey',LayoutDashboard],['trader-discover','Contest lobby',Search],['trader-trade','Trade',TrendingUp],['trader','Performance',Activity],['trader-competitions','My competitions',Trophy],['leaderboard','Leaderboard',TrendingUp]] },
+    { label: 'MY ACCOUNT', items: [['trader-rules','Rules & eligibility',Shield],['trader-appeals','Appeals',Flag],['trader-prizes','Results & prizes',Gift],['trader-notifications','Notifications',Bell],['trader-profile','Profile & account',UserCog]] },
   ],
   broker: [
-    { label: 'WORKSPACE', items: [['overview','Overview',LayoutDashboard],['competitions','Competitions',Trophy],['leaderboard','Leaderboard',TrendingUp],['participants','Participants',Users]] },
-    { label: 'MANAGEMENT', items: [['rules','Rules & validation',ShieldAlert],['prizes','Prize management',Gift],['analytics','Analytics',Activity],['leads','Trader intelligence',Target]] },
-    { label: 'SETTINGS', items: [['integrations','Integrations',Link2],['notifications','Notifications',Bell],['settings','Team & access',Settings2],['features','Feature map',ClipboardList]] },
+    { label: 'TENANT SETUP', items: [['broker-onboarding','Broker onboarding',Settings2]] },
+    { label: 'CONTEST BUSINESS', items: [['overview','Overview',LayoutDashboard],['competitions','Contest builder',Trophy],['broker-workflow','Contest workflow',ListChecks],['broker-registrations','Registrations',Users],['broker-live','Live operations',Activity],['broker-results','Results & finance',Wallet],['broker-prizes','Prize plans',Gift],['leaderboard','Live leaderboard',TrendingUp]] },
+    { label: 'GROWTH', items: [['broker-branding','White label',Sparkles],['broker-campaigns','Campaigns',Bell],['broker-partners','IB & partners',Users],['broker-ib','IB portal preview',Link2],['broker-roi','Analytics & ROI',Activity],['leads','Trader leads',Target]] },
+    { label: 'WORKSPACE', items: [['notifications','Notifications',Bell],['features','Feature map',ClipboardList]] },
   ],
   admin: [
-    { label: 'PLATFORM', items: [['admin-overview','Overview',LayoutDashboard],['admin-brokers','Brokers',Building2],['admin-operations','Operations',Server],['admin-risk','Risk & abuse',ShieldAlert]] },
+    { label: 'PLATFORM', items: [['admin-overview','Overview',LayoutDashboard],['admin-brokers','Brokers',Building2],['admin-operations','Operations',Server],['admin-integrations','Integrations',Link2]] },
+    { label: 'COMPETITION ENGINE', items: [['admin-lifecycle','Contest lifecycle',Clock3],['admin-rules','Rules engine',ListChecks],['admin-scoring','Scoring engine',TrendingUp],['admin-registrations','Registration & KYC',Users],['admin-risk','Risk & abuse',ShieldAlert],['admin-appeals','Appeals',Flag],['admin-payouts','Payout controls',Wallet]] },
     { label: 'GOVERNANCE', items: [['admin-users','Users & roles',UserCog],['admin-audit','Audit logs',ClipboardList],['admin-support','Support queue',LifeBuoy],['admin-settings','Configuration',Settings2],['features','Feature map',BookOpen]] },
   ],
 }
 const currency = n => '$' + Number(n).toLocaleString('en-US')
 const pct = n => `${Number(n).toFixed(2)}%`
 const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)) } catch {} }
+const traderFlowKey = email => `fx-trader-flow-account:${String(email||'').trim().toLowerCase()}`
+const storeCurrentTraderFlow = () => {
+  try {
+    const current=JSON.parse(localStorage.getItem('fx-trader-flow'))
+    if(current?.profile?.email) localStorage.setItem(traderFlowKey(current.profile.email),JSON.stringify(current))
+  } catch {}
+}
+const activateTraderFlow = (email, fallback) => {
+  storeCurrentTraderFlow()
+  try {
+    const saved=localStorage.getItem(traderFlowKey(email))
+    localStorage.setItem('fx-trader-flow',saved||JSON.stringify(fallback))
+  } catch {}
+}
 function useStored(key, fallback) {
   const [value, setValue] = useState(() => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } })
   const update = next => setValue(prev => { const v = typeof next === 'function' ? next(prev) : next; save(key, v); return v })
@@ -50,8 +69,10 @@ function TableWrap({ children }) { return <div className="table-wrap"><table>{ch
 
 function App() {
   const [session, setSession] = useStored('fx-session', null)
+  const [publicView,setPublicView] = useState('landing')
+  const [publicContestId,setPublicContestId] = useState('momentum')
   const role = roleConfig[session?.role] ? session.role : null
-  const account = role ? roleConfig[role] : null
+  const account = role ? {...roleConfig[role],...(role==='trader'&&session?.name?{name:session.name,email:session.email,initials:session.name.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase()}:null)} : null
   const navGroups = role ? navByRole[role] : []
   const [page, setPage] = useState(() => roleConfig[session?.role]?.home || 'overview')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -60,55 +81,89 @@ function App() {
   const [violations, setViolations] = useStored('fx-violations', initialViolations)
   const [toast, setToast] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [createTemplate, setCreateTemplate] = useState('Custom')
   const [selectedCompetition, setSelectedCompetition] = useState('apex')
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('All')
-  const [joinedCompetitions, setJoinedCompetitions] = useStored('fx-trader-joined', ['apex'])
+  const [joinedCompetitions, setJoinedCompetitions] = useStored('fx-trader-joined-v2', [])
   const [prizePaid, setPrizePaid] = useStored('fx-prize-paid', false)
   const [notificationPrefs, setNotificationPrefs] = useStored('fx-notifications', { email:true, sms:false, push:true, inApp:true })
   const [featureQuery, setFeatureQuery] = useState('')
   const [tab, setTab] = useState('Overview')
   const notify = message => { setToast(message); window.setTimeout(()=>setToast(''), 3200) }
+  const brokerCanCreate=()=>{try{return brokerRoleCan(JSON.parse(localStorage.getItem('fx-broker-setup'))||brokerSetupSeed,'Create')}catch{return false}}
+  const openContestCreate=template=>{if(!brokerCanCreate()){notify('Current broker staff role cannot create contests');return}setCreateTemplate(template);setShowCreate(true)}
   const allowed = new Set(navGroups.flatMap(group=>group.items.map(item=>item[0])))
   if (role === 'broker') allowed.add('competition-detail')
   const navigate = destination => { if (!allowed.has(destination)) return; setPage(destination); setMenuOpen(false); setQuery(''); setFilter('All'); setTab('Overview'); window.scrollTo({top:0, behavior:'smooth'}) }
-  const login = selectedRole => { setSession({ role: selectedRole, email: roleConfig[selectedRole].email }); setPage(roleConfig[selectedRole].home); setMenuOpen(false) }
-  const logout = () => { setSession(null); setPage('overview'); setMenuOpen(false); setShowCreate(false) }
+  const login = (selectedRole, verified=false) => {
+    const email=verified?VERIFIED_TRADER_EMAIL:roleConfig[selectedRole].email
+    if(selectedRole==='trader') {
+      activateTraderFlow(email,verified?createVerifiedTraderFlow():flowSeed)
+      if(verified)setCompetitions(items=>items.map(item=>item.id==='apex'?{...item,status:'Active'}:item))
+    }
+    setSession({role:selectedRole,email,...(verified?{name:'Taylor Reed'}:{})})
+    setPage(roleConfig[selectedRole].home)
+    setMenuOpen(false)
+  }
+  const registerPublic = profile => { let source='Direct';try{source=JSON.parse(localStorage.getItem('fx-attribution'))||'Direct'}catch{}storeCurrentTraderFlow();const next={...flowSeed,source,profile:{...profile,registered:true,otpVerified:true},selectedContest:publicContestId};save('fx-trader-flow',next);save(traderFlowKey(profile.email),next);setSession({role:'trader',name:profile.name,email:profile.email});setPage('trader-journey');setMenuOpen(false) }
+  const logout = () => { if(role==='trader')storeCurrentTraderFlow();setSession(null); setPublicView('landing'); setPage('overview'); setMenuOpen(false); setShowCreate(false) }
   const updateCompetition = (id, updates) => { setCompetitions(items => items.map(item => item.id === id ? {...item, ...updates} : item)); notify('Competition updated') }
   const updateParticipant = (id, status) => { setParticipants(items => items.map(item => item.id === id ? {...item, status} : item)); notify(`Participant ${status.toLowerCase()}`) }
   const updateViolation = (id, status) => { setViolations(items => items.map(item => item.id === id ? {...item, status} : item)); notify(`Violation marked ${status.toLowerCase()}`) }
   const activeCompetition = competitions.find(c => c.id === selectedCompetition) || competitions[0]
   const content = {
-    overview: <Overview competitions={competitions} violations={violations} onNavigate={navigate} onCreate={()=>setShowCreate(true)} />,
-    competitions: <Competitions competitions={competitions} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onCreate={()=>setShowCreate(true)} onSelect={id=>{setSelectedCompetition(id);navigate('competition-detail')}} />,
-    'competition-detail': <CompetitionDetail competition={activeCompetition} onBack={()=>navigate('competitions')} onUpdate={updateCompetition} onDuplicate={item=>{setCompetitions(items=>[{...item,id:`competition-${Date.now()}`,name:`${item.name} (Copy)`,status:'Draft',participants:0},...items]);notify('Competition duplicated as draft');navigate('competitions')}} tab={tab} setTab={setTab} />,
+    overview: <BrokerHome competitions={competitions} onNavigate={navigate} onCreate={openContestCreate} />,
+    competitions: <Competitions competitions={competitions} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onCreate={()=>openContestCreate('Custom')} onSelect={id=>{setSelectedCompetition(id);navigate('competition-detail')}} />,
+    'competition-detail': <><CompetitionDetail competition={activeCompetition} onBack={()=>navigate('competitions')} onNavigate={navigate} onDuplicate={item=>{if(!brokerCanCreate()){notify('Current broker staff role cannot clone contests');return}setCompetitions(items=>[{...item,id:`competition-${Date.now()}`,name:`${item.name} (Copy)`,status:'Draft',participants:0,rulesLocked:false,submittedBy:null,approvedBy:null},...items]);notify('Competition duplicated as draft');navigate('competitions')}} tab={tab} setTab={setTab} /><ContestConfiguration competition={activeCompetition}/></>,
     leaderboard: <Leaderboard query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} />,
     participants: <Participants participants={participants} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onUpdate={updateParticipant} />,
     rules: <Rules violations={violations} filter={filter} setFilter={setFilter} onUpdate={updateViolation} />,
     prizes: <Prizes paid={prizePaid} setPaid={setPrizePaid} notify={notify} />,
     analytics: <Analytics />,
     leads: <Leads participants={participants} />,
-    trader: <TraderPortal onNavigate={navigate} />,
-    'trader-discover': <TraderDiscover competitions={competitions} joined={joinedCompetitions} setJoined={setJoinedCompetitions} notify={notify} />,
-    'trader-competitions': <TraderCompetitions competitions={competitions} joined={joinedCompetitions} onNavigate={navigate} />,
-    'trader-rules': <TraderRules />,
-    'trader-prizes': <TraderPrizes />,
+    'trader-journey': <TraderJourney competitions={competitions} onNavigate={navigate} onJoin={id=>setJoinedCompetitions(items=>items.includes(id)?items:[...items,id])} />,
+    'trader-trade': <TraderTrading onNavigate={navigate} />,
+    trader: <TraderLivePerformance onNavigate={navigate} />,
+    'trader-discover': <TraderContestLobby competitions={competitions} onNavigate={navigate} />,
+    'trader-competitions': <TraderMyCompetitions competitions={competitions} joined={joinedCompetitions} onNavigate={navigate} />,
+    'trader-rules': <TraderFairPlay onNavigate={navigate} />,
+    'trader-appeals': <TraderAppeals />,
+    'trader-prizes': <TraderResults onNavigate={navigate} />,
     'trader-notifications': <TraderNotifications />,
-    'trader-profile': <TraderProfile />,
+    'trader-profile': <TraderIdentity />,
     integrations: <Integrations notify={notify} />,
     notifications: <Notifications prefs={notificationPrefs} setPrefs={setNotificationPrefs} notify={notify} />,
     settings: <Settings notify={notify} />,
-    'admin-overview': <AdminOverview violations={violations} onNavigate={navigate} />,
+    'broker-branding': <><BrokerBranding/><BrandEmbed competition={activeCompetition}/></>,
+    'broker-onboarding': <BrokerOnboarding onNavigate={navigate} />,
+    'broker-workflow': <BrokerContestWorkflow key={activeCompetition?.id} competition={activeCompetition} onUpdate={updateCompetition} onNavigate={navigate} onDuplicate={item=>{setCompetitions(items=>[{...item,id:`competition-${Date.now()}`,name:`${item.name} (Copy)`,status:'Draft',participants:0,rulesLocked:false,submittedBy:null,approvedBy:null},...items]);notify('Contest cloned as draft')}} />,
+    'broker-registrations': <BrokerRegistrations competition={activeCompetition} onNavigate={navigate} />,
+    'broker-live': <BrokerLiveOperations competition={activeCompetition} onNavigate={navigate} />,
+    'broker-results': <BrokerResultsFinance competition={activeCompetition} onNavigate={navigate} />,
+    'broker-campaigns': <><BrokerCampaigns/><BrokerSocialKit competition={activeCompetition}/></>,
+    'broker-partners': <><BrokerPartners competition={activeCompetition}/><BrokerSubcontests/></>,
+    'broker-ib': <BrokerIBPortal competition={activeCompetition} />,
+    'broker-roi': <BrokerROI competition={activeCompetition} />,
+    'broker-prizes': <BrokerPrizePlan />,
+    'admin-overview': <AdminHome violations={violations} participants={participants} paid={prizePaid} onNavigate={navigate} />,
     'admin-brokers': <AdminBrokers />,
     'admin-operations': <AdminOperations />,
-    'admin-risk': <AdminRisk violations={violations} onUpdate={updateViolation} />,
+    'admin-lifecycle': <AdminContestLifecycle competitions={competitions} onCompetitionUpdate={updateCompetition} />,
+    'admin-integrations': <AdminConnectors />,
+    'admin-rules': <AdminRuleBuilder />,
+    'admin-scoring': <AdminScoring />,
+    'admin-registrations': <><AdminContestLifecycle title="Registration & KYC" competitions={competitions} onCompetitionUpdate={updateCompetition} /><AdminRegistrations participants={participants} onUpdate={updateParticipant} /></>,
+    'admin-risk': <><AdminRisk violations={violations} onUpdate={updateViolation} /><AdminFraudSignals /></>,
+    'admin-appeals': <AdminAppeals />,
+    'admin-payouts': <AdminContestLifecycle title="Payout controls" competitions={competitions} onCompetitionUpdate={updateCompetition} />,
     'admin-users': <AdminUsers />,
     'admin-audit': <AdminAudit />,
     'admin-support': <AdminSupport />,
     'admin-settings': <AdminSettings />,
     features: <FeatureMap query={featureQuery} setQuery={setFeatureQuery} />,
   }[page]
-  if (!role) return <LoginPage onLogin={login} />
+  if (!role) return publicView==='landing' ? <PublicContestLanding competitions={competitions} onRegister={id=>{setPublicContestId(id||'momentum');setPublicView('register')}} onSignIn={()=>setPublicView('login')}/> : publicView==='register' ? <PublicRegistration contest={competitions.find(c=>c.id===publicContestId)} onBack={()=>setPublicView('landing')} onComplete={registerPublic}/> : <div className="login-with-back"><button className="login-public-back" onClick={()=>setPublicView('landing')}><ArrowLeft size={16}/> Back to public contests</button><LoginPage onLogin={login}/></div>
   return <div className="app-shell">
     <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
       <div className="brand"><div className="brand-mark"><Activity size={22} strokeWidth={2.5}/></div><span>finxora<span className="brand-dot">.</span></span><button className="mobile-close" onClick={()=>setMenuOpen(false)} aria-label="Close menu"><X size={20}/></button></div>
@@ -118,7 +173,7 @@ function App() {
     </aside>
     {menuOpen && <div className="scrim" onClick={()=>setMenuOpen(false)}/>}
     <main className="main"><header className="topbar"><div className="topbar-left"><button className="mobile-menu" onClick={()=>setMenuOpen(true)} aria-label="Open menu"><Menu size={21}/></button><span className="breadcrumb">{account.title} <ChevronRight size={14}/> <strong>{page === 'competition-detail' ? 'Competition details' : navGroups.flatMap(g=>g.items).find(i=>i[0]===page)?.[1]}</strong></span></div><div className="topbar-right"><span className="demo-pill"><i/> DEMO DATA</span><button className="icon-btn" onClick={()=>navigate(role === 'trader' ? 'trader-notifications' : role === 'broker' ? 'notifications' : 'admin-support')} aria-label="Notifications"><Bell size={19}/><span className="notification-dot"/></button><div className="topbar-divider"/><div className="role-switch" aria-label={`Signed in as ${account.title}`}><Avatar initials={account.initials} color={account.color} size="small"/><span>{account.title}</span></div><button className="topbar-logout" onClick={logout} title="Sign out" aria-label="Sign out"><LogOut size={17}/></button></div></header><div className="content">{content}</div></main>
-    {showCreate && <CreateModal onClose={()=>setShowCreate(false)} onCreate={item=>{setCompetitions(items=>[item,...items]);setShowCreate(false);notify('Competition created as draft');navigate('competitions')}} />}
+    {showCreate && <CreateContestModal template={createTemplate} onClose={()=>setShowCreate(false)} onCreate={item=>{if(!brokerCanCreate()){setShowCreate(false);notify('Current broker staff role cannot create contests');return}setCompetitions(items=>[item,...items]);setShowCreate(false);notify('Competition created as draft');navigate('competitions')}} />}
     {toast && <div className="toast"><CheckCircle2 size={18}/>{toast}</div>}
   </div>
 }
@@ -134,8 +189,8 @@ function LoginPage({ onLogin }) {
     ['admin','Admin','Oversee brokers, risk, and platform health',Shield],
   ]
   const choose = next => { setSelected(next); setEmail(roleConfig[next].email); setPassword(''); setError('') }
-  const submit = e => { e.preventDefault(); if (email.trim().toLowerCase() !== roleConfig[selected].email || password !== 'demo1234') { setError('Use the demo email shown for this role and password demo1234.'); return } onLogin(selected) }
-  return <div className="login-shell"><div className="login-story"><div className="login-brand"><div className="brand-mark"><Activity size={24} strokeWidth={2.5}/></div>finxora<span>.</span></div><div className="login-story-body"><span className="login-kicker"><i/> THE TRADING COMPETITION PLATFORM</span><h1>Every competition.<br/><em>One connected place.</em></h1><p>Explore the experience from the perspective of the people who trade, manage, and operate it.</p><div className="login-story-stats"><div><strong>2,444</strong><span>Participants</span></div><div><strong>4</strong><span>Competitions</span></div><div><strong>$112.5K</strong><span>Prize pool</span></div></div></div><div className="login-story-footer"><span className="pulse-dot"/> Interactive product prototype <span>·</span> Sample data</div></div><div className="login-form-side"><div className="login-panel"><span className="eyebrow">WELCOME TO FINXORA</span><h2>Choose your workspace</h2><p>Select a role to preview its dashboard and tools.</p><div className="role-choices">{choices.map(([key,title,detail,Icon])=><button key={key} type="button" className={`role-choice ${selected===key?'selected':''}`} onClick={()=>choose(key)}><span className="role-choice-icon"><Icon size={20}/></span><span><strong>{title}</strong><small>{detail}</small></span><span className="choice-radio">{selected===key&&<i/>}</span></button>)}</div><form onSubmit={submit} className="login-form"><label>Demo email<input type="email" value={email} onChange={e=>{setEmail(e.target.value);setError('')}} autoComplete="username" required/></label><label>Password<input type="password" value={password} onChange={e=>{setPassword(e.target.value);setError('')}} autoComplete="current-password" placeholder="Enter demo password" required/></label><div className="login-hint"><span>Demo password: <strong>demo1234</strong></span><button type="button" onClick={()=>setPassword('demo1234')}>Use password</button></div>{error&&<div className="login-error" role="alert">{error}</div>}<Button type="submit" icon={ArrowRight}>Sign in as {roleConfig[selected].title}</Button></form><div className="login-disclaimer"><Shield size={15}/> Demo sign-in only. No real authentication or private trading data.</div></div></div></div>
+  const submit = e => { e.preventDefault(); const entered=email.trim().toLowerCase();const verified=selected==='trader'&&entered===VERIFIED_TRADER_EMAIL;if((entered!==roleConfig[selected].email&&!verified)||password!=='demo1234'){setError('Use a listed demo email and password demo1234.');return}onLogin(selected,verified) }
+  return <div className="login-shell"><div className="login-story"><div className="login-brand"><div className="brand-mark"><Activity size={24} strokeWidth={2.5}/></div>finxora<span>.</span></div><div className="login-story-body"><span className="login-kicker"><i/> THE TRADING COMPETITION PLATFORM</span><h1>Every competition.<br/><em>One connected place.</em></h1><p>Explore the experience from the perspective of the people who trade, manage, and operate it.</p><div className="login-story-stats"><div><strong>2,444</strong><span>Participants</span></div><div><strong>4</strong><span>Competitions</span></div><div><strong>$112.5K</strong><span>Prize pool</span></div></div></div><div className="login-story-footer"><span className="pulse-dot"/> Interactive product prototype <span>·</span> Sample data</div></div><div className="login-form-side"><div className="login-panel"><span className="eyebrow">WELCOME TO FINXORA</span><h2>Choose your workspace</h2><p>Select a role to preview its dashboard and tools.</p><div className="role-choices">{choices.map(([key,title,detail,Icon])=><button key={key} type="button" className={`role-choice ${selected===key?'selected':''}`} onClick={()=>choose(key)}><span className="role-choice-icon"><Icon size={20}/></span><span><strong>{title}</strong><small>{detail}</small></span><span className="choice-radio">{selected===key&&<i/>}</span></button>)}</div><form onSubmit={submit} className="login-form"><label>Demo email<input type="email" value={email} onChange={e=>{setEmail(e.target.value);setError('')}} autoComplete="username" required/></label><label>Password<input type="password" value={password} onChange={e=>{setPassword(e.target.value);setError('')}} autoComplete="current-password" placeholder="Enter demo password" required/></label><div className="login-hint"><span>Demo password: <strong>demo1234</strong></span><button type="button" onClick={()=>setPassword('demo1234')}>Use password</button></div>{selected==='trader'&&<div className="verified-demo-hint"><span><Shield size={15}/> Verified trader: <strong>{VERIFIED_TRADER_EMAIL}</strong></span><button type="button" onClick={()=>{setEmail(VERIFIED_TRADER_EMAIL);setPassword('demo1234');setError('')}}>Use verified account</button></div>}{error&&<div className="login-error" role="alert">{error}</div>}<Button type="submit" icon={ArrowRight}>Sign in as {roleConfig[selected].title}</Button></form><div className="login-disclaimer"><Shield size={15}/> Demo sign-in only. No real authentication or private trading data.</div></div></div></div>
 }
 
 function TraderDiscover({ competitions, joined, setJoined, notify }) {
@@ -153,7 +208,21 @@ function TraderRules() { return <><PageHeader eyebrow="STAY ELIGIBLE" title="Rul
 
 function TraderPrizes() { return <><PageHeader eyebrow="YOUR RESULTS" title="Results & prizes" description="Follow your standing, verification, and potential awards."/><div className="trader-hero"><div><span className="eyebrow">CURRENT PROVISIONAL RANK</span><h2>#1 <span>in Apex Trader Challenge</span></h2><p>The competition is active. Final results require rule and eligibility review.</p></div><div className="trader-hero-graphic"><Award size={110}/></div></div><div className="two-columns"><div className="panel detail-panel"><SectionTitle eyebrow="AWARD STRUCTURE" title="Prize tiers"/><div className="info-rows"><div><span>1st place</span><strong>$25,000</strong></div><div><span>2nd place</span><strong>$15,000</strong></div><div><span>3rd place</span><strong>$10,000</strong></div></div></div><div className="panel detail-panel"><SectionTitle eyebrow="YOUR STATUS" title="Winner verification"/><div className="checklist"><div><CheckCircle2 size={18}/> Competition entry <Badge tone="green">Verified</Badge></div><div><Clock3 size={18}/> Final rankings <Badge tone="amber">Pending</Badge></div><div><Clock3 size={18}/> Winner review <Badge tone="neutral">After event</Badge></div><div><Clock3 size={18}/> Payout <Badge tone="neutral">Not started</Badge></div></div></div></div></> }
 
-function TraderNotifications() { return <><PageHeader eyebrow="YOUR UPDATES" title="Notifications" description="Important events for your account and competitions."/><div className="panel detail-panel"><div className="notification-list">{[['Rank change','You moved up to 1st place in Apex Trader Challenge','Today, 10:42','lime'],['Rule status','Your account remains within the drawdown limit','Today, 08:15','purple'],['Competition update','Apex Trader Challenge has entered its final month','Oct 01, 09:00','orange'],['Entry confirmed','Your competition entry was approved','Sep 30, 14:20','blue']].map(([title,detail,time,color])=><div key={title}><span className={`notification-icon ${color}`}><Bell size={17}/></span><span><strong>{title}</strong><small>{detail}</small></span><time>{time}</time></div>)}</div></div></> }
+function TraderNotifications() {
+  const [flow] = useStored('fx-trader-flow', flowSeed)
+  const events = [
+    flow.profile.otpVerified && ['Contact verified', 'Your profile contact was confirmed.', 'blue'],
+    flow.entry.confirmedAt && ['Entry confirmed', 'Your contest entry is confirmed.', 'lime'],
+    flow.entry.status==='Pending approval' && ['Entry review', 'Your entry is awaiting administrator approval.', 'orange'],
+    flow.contest.baseline && ['Contest started', 'Starting balance and equity were captured.', 'purple'],
+    ...flow.contest.warnings.map(w=>['Fair-play decision', w, 'orange']),
+    flow.results.status==='Provisional' && ['Provisional result', `Your provisional rank is ${flow.results.provisionalRank ? '#'+flow.results.provisionalRank : 'under review'}.`, 'purple'],
+    flow.results.status==='Final' && ['Final result', flow.results.finalRank ? `Your final rank is #${flow.results.finalRank}.` : 'Your final result is disqualified.', 'lime'],
+    flow.prize.status==='On hold' && ['Prize on hold', 'Complete eligibility requirements before release.', 'orange'],
+    flow.prize.status==='Paid' && ['Demo payout', 'Your demo payout was recorded.', 'lime'],
+  ].filter(Boolean).reverse()
+  return <><PageHeader eyebrow="YOUR UPDATES" title="Notifications" description="Events from your current contest journey."/><div className="panel detail-panel"><div className="notification-list">{events.map(([title,detail,color],index)=><div key={`${title}-${index}`}><span className={`notification-icon ${color}`}><Bell size={17}/></span><span><strong>{title}</strong><small>{detail}</small></span></div>)}</div></div></>
+}
 
 function TraderProfile() { return <><PageHeader eyebrow="ACCOUNT" title="Profile & trading account" description="Your identity, verification, and connected account at a glance."/><div className="two-columns"><div className="panel detail-panel"><SectionTitle eyebrow="TRADER PROFILE" title="Alex Morgan"/><div className="info-rows"><div><span>Email</span><strong>alex.morgan@example.com</strong></div><div><span>Country</span><strong>United Kingdom</strong></div><div><span>Experience</span><strong>Intermediate</strong></div><div><span>Verification</span><strong>Verified</strong></div></div></div><div className="panel detail-panel"><SectionTitle eyebrow="CONNECTED ACCOUNT" title="MetaTrader 5"/><div className="info-rows"><div><span>Account ID</span><strong>MT5-48291</strong></div><div><span>Account type</span><strong>Live account</strong></div><div><span>Balance</span><strong>$138,420</strong></div><div><span>Sync status</span><strong>Demo connection</strong></div></div><div className="notice"><LockKeyhole size={18}/> Profile information is sample data for this prototype.</div></div></div></> }
 
@@ -189,9 +258,9 @@ function Competitions({ competitions, query, setQuery, filter, setFilter, onCrea
   return <><PageHeader eyebrow="COMPETITION MANAGEMENT" title="Competitions" description="Create, configure, and manage every trading challenge." action={<Button icon={Plus} onClick={onCreate}>Create competition</Button>}/><div className="summary-strip"><div><Trophy size={19}/><strong>{competitions.length}</strong><span>Total competitions</span></div><div><Activity size={19}/><strong>{competitions.filter(c=>c.status==='Active').length}</strong><span>Active now</span></div><div><Users size={19}/><strong>{competitions.reduce((n,c)=>n+c.participants,0).toLocaleString()}</strong><span>Participants</span></div><div><Gift size={19}/><strong>{currency(competitions.reduce((n,c)=>n+c.prize,0))}</strong><span>Total prize pool</span></div></div><div className="toolbar"><div className="search-field"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search competitions..."/></div><div className="filter-row">{['All','Active','Registration Open','Scheduled','Completed','Draft'].map(x=><button className={filter===x?'selected':''} onClick={()=>setFilter(x)} key={x}>{x}</button>)}</div></div><div className="competition-cards">{shown.map(c=><button className="competition-card" key={c.id} onClick={()=>onSelect(c.id)}><div className="competition-card-top"><div className={`competition-symbol large ${c.color}`}><Trophy size={25}/></div><Status value={c.status}/></div><h3>{c.name}</h3><p>{c.description}</p><div className="competition-meta"><span><CalendarDays size={15}/>{c.dates}</span><span><Globe2 size={15}/>{c.region}</span></div><div className="capacity"><div><span>Participants</span><strong>{c.participants.toLocaleString()} / {c.capacity.toLocaleString()}</strong></div><div className="progress"><i style={{width:`${Math.min(100,c.participants/c.capacity*100)}%`}}/></div></div><div className="competition-card-footer"><span>Prize pool <strong>{currency(c.prize)}</strong></span><span>View details <ArrowRight size={15}/></span></div></button>)}{!shown.length && <Empty title="No competitions found" text="Try another search or status filter."/>}</div></>
 }
 
-function CompetitionDetail({ competition:c, onBack, onUpdate, onDuplicate, tab, setTab }) {
+function CompetitionDetail({ competition:c, onBack, onNavigate, onDuplicate, tab, setTab }) {
   if (!c) return null
-  return <><button className="back-link" onClick={onBack}><ArrowLeft size={16}/> Back to competitions</button><PageHeader eyebrow="COMPETITION DETAILS" title={c.name} description={c.description} action={<div className="header-actions"><Status value={c.status}/><Button variant="secondary" icon={Copy} onClick={()=>onDuplicate(c)}>Duplicate</Button></div>}/><div className="detail-hero"><div className={`competition-symbol jumbo ${c.color}`}><Trophy size={34}/></div><div><span className="eyebrow">{c.type.toUpperCase()} · {c.region.toUpperCase()}</span><h2>{currency(c.prize)} prize pool</h2><p>{c.dates}</p></div><div className="detail-hero-stats"><div><strong>{c.participants.toLocaleString()}</strong><span>Participants</span></div><div><strong>{c.ranking}</strong><span>Ranking method</span></div></div></div><div className="tabs">{['Overview','Rules','Participants','Results'].map(x=><button key={x} className={tab===x?'active':''} onClick={()=>setTab(x)}>{x}</button>)}</div>{tab==='Overview' && <div className="two-columns"><div className="panel detail-panel"><SectionTitle eyebrow="LIFECYCLE" title="Competition controls"/><p className="muted">Change the competition’s state as it progresses through its lifecycle.</p><div className="lifecycle">{['Draft','Scheduled','Registration Open','Active','Paused','Completed','Under Review','Closed','Cancelled'].map(x=><button key={x} className={c.status===x?'current':''} onClick={()=>onUpdate(c.id,{status:x})}>{x}</button>)}</div></div><div className="panel detail-panel"><SectionTitle eyebrow="AT A GLANCE" title="Configuration"/><div className="info-rows"><div><span>Format</span><strong>{c.type}</strong></div><div><span>Region</span><strong>{c.region}</strong></div><div><span>Ranking method</span><strong>{c.ranking}</strong></div><div><span>Capacity</span><strong>{c.capacity.toLocaleString()}</strong></div><div><span>Visibility</span><strong>{c.type==='Private'?'Invite only':'Public'}</strong></div></div></div></div>}{tab==='Rules' && <div className="two-columns"><div className="panel detail-panel"><SectionTitle eyebrow="ACCOUNT RULES" title="Account requirements"/><div className="info-rows"><div><span>Starting balance</span><strong>$100,000</strong></div><div><span>Minimum deposit</span><strong>$500</strong></div><div><span>Maximum leverage</span><strong>1:100</strong></div><div><span>Account type</span><strong>{c.type}</strong></div></div></div><div className="panel detail-panel"><SectionTitle eyebrow="TRADING RULES" title="Risk limits"/><div className="info-rows"><div><span>Maximum drawdown</span><strong>10%</strong></div><div><span>Daily loss limit</span><strong>5%</strong></div><div><span>Maximum lot size</span><strong>10 lots</strong></div><div><span>Minimum trading days</span><strong>10 days</strong></div></div></div></div>}{tab==='Participants' && <div className="panel detail-panel"><SectionTitle eyebrow="ENROLLMENT" title="Participant capacity"/><div className="capacity"><div><span>Registered traders</span><strong>{c.participants.toLocaleString()} / {c.capacity.toLocaleString()}</strong></div><div className="progress"><i style={{width:`${Math.min(100,c.participants/c.capacity*100)}%`}}/></div></div><p className="muted">Manage individual approvals and account status from the Participants page.</p></div>}{tab==='Results' && <div className="panel detail-panel"><SectionTitle eyebrow="RESULTS" title="Winner verification"/><p className="muted">Final standings are reviewed after the competition ends. Confirm eligibility, rule compliance, and prize approvals before publishing.</p><div className="notice"><Shield size={18}/> Results are available after the competition is completed and reviewed.</div></div>}</>
+  return <><button className="back-link" onClick={onBack}><ArrowLeft size={16}/> Back to competitions</button><PageHeader eyebrow="COMPETITION DETAILS" title={c.name} description={c.description} action={<div className="header-actions"><Status value={c.status}/><Button variant="secondary" icon={Copy} onClick={()=>onDuplicate(c)}>Duplicate</Button></div>}/><div className="detail-hero"><div className={`competition-symbol jumbo ${c.color}`}><Trophy size={34}/></div><div><span className="eyebrow">{c.type.toUpperCase()} · {c.region.toUpperCase()}</span><h2>{currency(c.prize)} prize pool</h2><p>{c.dates}</p></div><div className="detail-hero-stats"><div><strong>{c.participants.toLocaleString()}</strong><span>Participants</span></div><div><strong>{c.ranking}</strong><span>Ranking method</span></div></div></div><div className="tabs">{['Overview','Rules','Participants','Results'].map(x=><button key={x} className={tab===x?'active':''} onClick={()=>setTab(x)}>{x}</button>)}</div>{tab==='Overview' && <div className="two-columns"><div className="panel detail-panel"><SectionTitle eyebrow="LIFECYCLE" title="Competition controls"/><p className="muted">Change the competition’s state as it progresses through its lifecycle.</p><div className="flow-actions"><Button icon={ArrowRight} onClick={()=>onNavigate('broker-workflow')}>Open review and operations</Button></div><div className="notice"><Shield size={18}/> Contest status changes now follow review, publish, and audit controls in the broker workflow. Trading start, results, and payouts are handled by admin.</div></div><div className="panel detail-panel"><SectionTitle eyebrow="AT A GLANCE" title="Configuration"/><div className="info-rows"><div><span>Format</span><strong>{c.type}</strong></div><div><span>Region</span><strong>{c.region}</strong></div><div><span>Ranking method</span><strong>{c.ranking}</strong></div><div><span>Capacity</span><strong>{c.capacity.toLocaleString()}</strong></div><div><span>Visibility</span><strong>{c.type==='Private'?'Invite only':'Public'}</strong></div></div></div></div>}{tab==='Rules' && <div className="two-columns"><div className="panel detail-panel"><SectionTitle eyebrow="ACCOUNT RULES" title="Account requirements"/><div className="info-rows"><div><span>Starting balance</span><strong>$100,000</strong></div><div><span>Minimum deposit</span><strong>$500</strong></div><div><span>Maximum leverage</span><strong>1:100</strong></div><div><span>Account type</span><strong>{c.type}</strong></div></div></div><div className="panel detail-panel"><SectionTitle eyebrow="TRADING RULES" title="Risk limits"/><div className="info-rows"><div><span>Maximum drawdown</span><strong>10%</strong></div><div><span>Daily loss limit</span><strong>5%</strong></div><div><span>Maximum lot size</span><strong>10 lots</strong></div><div><span>Minimum trading days</span><strong>10 days</strong></div></div></div></div>}{tab==='Participants' && <div className="panel detail-panel"><SectionTitle eyebrow="ENROLLMENT" title="Participant capacity"/><div className="capacity"><div><span>Registered traders</span><strong>{c.participants.toLocaleString()} / {c.capacity.toLocaleString()}</strong></div><div className="progress"><i style={{width:`${Math.min(100,c.participants/c.capacity*100)}%`}}/></div></div><p className="muted">Manage individual approvals and account status from the Participants page.</p></div>}{tab==='Results' && <div className="panel detail-panel"><SectionTitle eyebrow="RESULTS" title="Winner verification"/><p className="muted">Final standings are reviewed after the competition ends. Confirm eligibility, rule compliance, and prize approvals before publishing.</p><div className="notice"><Shield size={18}/> Results are available after the competition is completed and reviewed.</div></div>}</>
 }
 
 function Leaderboard({ query, setQuery, filter, setFilter }) {
